@@ -2,6 +2,7 @@ abstract class B
 case class BitVector(value: String) extends B
 case object Zero extends B
 case object One extends B
+case class Var(name: String) extends B
 case class BVAdd(b1: B, b2: B) extends B
 case class BVSub(b1: B, b2: B) extends B
 case class BVNot(b: B) extends B
@@ -11,16 +12,17 @@ case class BVXor(b1: B, b2: B) extends B
 
 object BitVectorInterpreter {
 
-  def eval(expr: B): String = expr match {
+  def eval(expr: B, env: Map[String, BitVector] = Map.empty): String = expr match {
     case BitVector(value) => value
     case Zero => "00000000"
     case One => "00000001"
-    case BVAdd(b1, b2) => bitVectorAdd(eval(b1), eval(b2))
-    case BVSub(b1, b2) => bitVectorSub(eval(b1), eval(b2))
-    case BVNot(b) => eval(b).map(bit => if (bit == '0') '1' else '0')
-    case BVOr(b1, b2) => bitVectorOperation(_ | _, eval(b1), eval(b2))
-    case BVAnd(b1, b2) => bitVectorOperation(_ & _, eval(b1), eval(b2))
-    case BVXor(b1, b2) => bitVectorOperation(_ ^ _, eval(b1), eval(b2))
+    case Var(name) => eval(env.getOrElse(name, throw new RuntimeException(s"Variable $name not defined.")), env)
+    case BVAdd(b1, b2) => bitVectorAdd(eval(b1, env), eval(b2, env))
+    case BVSub(b1, b2) => bitVectorSub(eval(b1, env), eval(b2, env))
+    case BVNot(b) => eval(b, env).map(bit => if (bit == '0') '1' else '0')
+    case BVOr(b1, b2) => bitVectorOperation(_ | _, eval(b1, env), eval(b2, env))
+    case BVAnd(b1, b2) => bitVectorOperation(_ & _, eval(b1, env), eval(b2, env))
+    case BVXor(b1, b2) => bitVectorOperation(_ ^ _, eval(b1, env), eval(b2, env))
   }
 
   private def bitVectorAdd(b1: String, b2: String): String = {
