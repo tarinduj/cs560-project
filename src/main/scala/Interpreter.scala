@@ -25,7 +25,8 @@ object BitVectorInterpreter {
 
   private def bitVectorAdd(b1: String, b2: String): String = {
     val sum = Integer.parseInt(b1, 2) + Integer.parseInt(b2, 2)
-    String.format("%8s", Integer.toBinaryString(sum)).replace(' ', '0')
+    val binarySum = Integer.toBinaryString(sum)
+    String.format("%8s", binarySum).replace(' ', '0').takeRight(8)
   }
 
   private def bitVectorSub(b1: String, b2: String): String = {
