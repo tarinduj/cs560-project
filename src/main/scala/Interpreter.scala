@@ -28,13 +28,13 @@ object BitVectorInterpreter {
   }
 
   private def bitVectorAdd(b1: String, b2: String): String = {
-    val sum = Integer.parseInt(b1, 2) + Integer.parseInt(b2, 2)
+    val sum = Integer.parseInt(b1.takeRight(8), 2) + Integer.parseInt(b2.takeRight(8), 2)
     val binarySum = Integer.toBinaryString(sum)
     String.format("%8s", binarySum).replace(' ', '0').takeRight(8)
   }
 
   private def bitVectorSub(b1: String, b2: String): String = {
-    val difference = Integer.parseInt(b1, 2) - Integer.parseInt(b2, 2)
+    val difference = Integer.parseInt(b1.takeRight(8), 2) - Integer.parseInt(b2.takeRight(8), 2)
     String.format("%8s", Integer.toBinaryString(difference)).replace(' ', '0')
   }
 

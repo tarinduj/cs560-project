@@ -4,9 +4,10 @@ import interpreter._
 
 import scala.collection.mutable.{ArrayBuffer, Set}
 
-class Bank() {
-  val sizes = ArrayBuffer[Set[B]](Set(Zero, One))
+class Bank(val variables: Set[Var] = Set(), val inputs: Option[Array[Map[String, BitVector]]] = None) {
+  val sizes = ArrayBuffer[Set[B]](Set(Zero, One) ++ variables.map(_.asInstanceOf[B]))
   var currentSize = 1
+  val outputs: Option[Set[Array[BitVector]]] = inputs.map(_ => Set.empty)
 
   def growTo(size: Int) = {
     while (sizes.length <= size) {
@@ -30,8 +31,21 @@ class Bank() {
         op <- binaryConstructors
       } yield op(lExp, rExp)
 
-      sizes(czize) ++= unaryExps
-      sizes(czize) ++= binaryExps
+      if (inputs.isDefined) {
+        for (exp <- unaryExps ++ binaryExps) {
+          val envs = inputs.get
+          val results: Array[BitVector] = envs.map(BitVectorInterpreter.eval(exp, _)).map(BitVector(_))
+          if (!outputs.get.exists(_.sameElements(results))) {
+            sizes(czize) += exp
+            outputs.get += results
+          }
+        }
+      } else {
+        // no pruning
+        for (exp <- unaryExps ++ binaryExps) {
+          sizes(czize) += exp
+        }
+      }
     }
   }
 }
