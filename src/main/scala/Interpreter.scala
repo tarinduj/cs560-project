@@ -1,3 +1,5 @@
+package interpreter
+
 abstract class B
 case class BitVector(value: String) extends B
 case object Zero extends B
