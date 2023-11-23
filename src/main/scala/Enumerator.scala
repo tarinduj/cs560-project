@@ -4,26 +4,26 @@ import interpreter._
 
 import scala.collection.mutable.{ArrayBuffer, Set}
 
-class Bank(val variables: Set[Var] = Set(), val inputs: Option[Array[Map[String, BitVector]]] = None) {
-  val sizes = ArrayBuffer[Set[B]](Set(Zero, One) ++ variables.map(_.asInstanceOf[B]))
+class Bank(val variables: Set[ConcreteVar] = Set(), val inputs: Option[Array[Map[String, ConcreteBitVector]]] = None) {
+  val sizes = ArrayBuffer[Set[ConcreteB]](Set(ConcreteZero, ConcreteOne) ++ variables.map(_.asInstanceOf[ConcreteB]))
   var currentSize = 1
-  val outputs: Option[Set[Array[BitVector]]] = inputs.map(_ => Set.empty)
+  val outputs: Option[Set[Array[ConcreteBitVector]]] = inputs.map(_ => Set.empty)
 
   def growTo(size: Int) = {
     while (sizes.length <= size) {
-      sizes += Set.empty[B]
+      sizes += Set.empty[ConcreteB]
     }
 
     for (czize <- currentSize to size) {
-      val unaryConstructors: List[B => B] = List(BVNot)
-      val binaryConstructors: List[(B, B) => B] = List(BVAdd, BVSub, BVOr, BVAnd, BVXor)
+      val unaryConstructors: List[ConcreteB => ConcreteB] = List(ConcreteBVNot)
+      val binaryConstructors: List[(ConcreteB, ConcreteB) => ConcreteB] = List(ConcreteBVAdd, ConcreteBVSub, ConcreteBVOr, ConcreteBVAnd, ConcreteBVXor)
 
-      val unaryExps: Iterable[B] = for {
+      val unaryExps: Iterable[ConcreteB] = for {
         subExp <- sizes(czize - 1)
         op <- unaryConstructors
       } yield op(subExp)
 
-      val binaryExps: Iterable[B] = for {
+      val binaryExps: Iterable[ConcreteB] = for {
         lSize <- 1 to (czize - 1)
         rSize = czize - lSize
         lExp <- sizes(lSize - 1)
@@ -34,7 +34,7 @@ class Bank(val variables: Set[Var] = Set(), val inputs: Option[Array[Map[String,
       if (inputs.isDefined) {
         for (exp <- unaryExps ++ binaryExps) {
           val envs = inputs.get
-          val results: Array[BitVector] = envs.map(BitVectorInterpreter.eval(exp, _)).map(BitVector(_))
+          val results: Array[ConcreteBitVector] = envs.map(ConcreteBitVectorInterpreter.eval(exp, _)).map(ConcreteBitVector(_))
           if (!outputs.get.exists(_.sameElements(results))) {
             sizes(czize) += exp
             outputs.get += results
