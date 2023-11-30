@@ -18,16 +18,16 @@ object ConcreteBitVectorInterpreter {
     case ConcreteZero => 1
     case ConcreteOne => 1
     case ConcreteVar(name) => 1
-    case ConcreteBVAdd(b1, b2) => size(b1) + size(b2)
-    case ConcreteBVSub(b1, b2) => size(b1) + size(b2)
-    case ConcreteBVNot(b) => size(b)
-    case ConcreteBVOr(b1, b2) => size(b1) + size(b2)
-    case ConcreteBVAnd(b1, b2) => size(b1) + size(b2)
-    case ConcreteBVXor(b1, b2) => size(b1) + size(b2)
+    case ConcreteBVAdd(b1, b2) => size(b1) + size(b2) + 1
+    case ConcreteBVSub(b1, b2) => size(b1) + size(b2) + 1
+    case ConcreteBVNot(b) => size(b) + 1
+    case ConcreteBVOr(b1, b2) => size(b1) + size(b2) + 1
+    case ConcreteBVAnd(b1, b2) => size(b1) + size(b2) + 1
+    case ConcreteBVXor(b1, b2) => size(b1) + size(b2) + 1
   }
 
   def eval(expr: ConcreteB, env: Map[String, ConcreteBitVector] = Map.empty): String = expr match {
-    case ConcreteBitVector(value) => value
+    case ConcreteBitVector(value) => value.reverse.padTo(8, '0').reverse.takeRight(8)
     case ConcreteZero => "00000000"
     case ConcreteOne => "00000001"
     case ConcreteVar(name) => eval(env.getOrElse(name, throw new RuntimeException(s"Variable $name not defined.")), env)
@@ -47,7 +47,7 @@ object ConcreteBitVectorInterpreter {
 
   private def concreteBitVectorSub(b1: String, b2: String): String = {
     val difference = Integer.parseInt(b1.takeRight(8), 2) - Integer.parseInt(b2.takeRight(8), 2)
-    String.format("%8s", Integer.toBinaryString(difference)).replace(' ', '0')
+    String.format("%8s", Integer.toBinaryString(difference)).replace(' ', '0').takeRight(8)
   }
 
   private def concreteBitVectorOperation(op: (Int, Int) => Int, b1: String, b2: String): String = {

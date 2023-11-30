@@ -3,6 +3,7 @@ package ui
 import interpreter._
 import enumerator._
 import symbolicinterpreter._
+import constraints._
 
 import z3.scala._
 
@@ -35,7 +36,7 @@ object UI extends App {
     println("Enter another example? (y/n)")
     val response = scala.io.StdIn.readLine()
     response match {
-      case "y" => 
+      case "y" =>
         println("Enter some assignments of the form 'name = bitvector', or 'n' to exit: ")
         exampleLoop(getSingleExample(examples))
       case "n" => examples
@@ -45,12 +46,13 @@ object UI extends App {
     }
   }
 
+  //val examples = Map(Map("x" -> ConcreteBitVector("010")) -> ConcreteBitVector("1"), Map("x" -> ConcreteBitVector("101")) -> ConcreteBitVector("10"))
   val examples = exampleLoop(Map.empty)
   println(s"Examples: $examples")
 
   val variables = MutSet(examples.head._1.keySet.toSeq.map(ConcreteVar(_)): _*)
   val bank = new Bank(variables)
-  bank.growTo(5) 
+  bank.growTo(5)
 
   val goodPrograms = bank.matchingPrograms(examples)
 
@@ -58,8 +60,7 @@ object UI extends App {
   // val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
   // println(s"Smallest program: $smallestProgram")
 
-  def findBestInput(programs: Set[ConcreteB], examples: Examples): Map[String, ConcreteBitVector] = ???
-  val bestInput: Map[String, ConcreteBitVector] = findBestInput(goodPrograms, examples)
+  val bestInput: Map[String, ConcreteBitVector] = Constraints.findBestInput(goodPrograms, examples.head._1.keySet)
   val possibleOutputs = goodPrograms.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
 
   println(s"Select the desired output for input $bestInput:")

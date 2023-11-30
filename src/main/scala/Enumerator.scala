@@ -17,7 +17,7 @@ class Bank(val variables: Set[ConcreteVar] = Set(), val inputs: Option[Array[Map
 
     for (czize <- currentSize to size) {
       val unaryConstructors: List[ConcreteB => ConcreteB] = List(ConcreteBVNot.apply)
-      val binaryConstructors: List[(ConcreteB, ConcreteB) => ConcreteB] = 
+      val binaryConstructors: List[(ConcreteB, ConcreteB) => ConcreteB] =
         List(ConcreteBVAdd.apply, ConcreteBVSub.apply, ConcreteBVOr.apply, ConcreteBVAnd.apply, ConcreteBVXor.apply)
 
       val unaryExps: Iterable[ConcreteB] = for {
@@ -56,9 +56,10 @@ class Bank(val variables: Set[ConcreteVar] = Set(), val inputs: Option[Array[Map
   def matchingPrograms(examples: Map[Map[String, ConcreteBitVector], ConcreteBitVector]): ImmSet[ConcreteB] = {
     val programs = this.programs
     programs.filter { program =>
-      examples.forall { case (inputs, ConcreteBitVector(output)) =>
+      examples.forall { case (inputs, output) =>
         val result = ConcreteBitVectorInterpreter.eval(program, inputs)
-        result == output
+        val expected = ConcreteBitVectorInterpreter.eval(output)
+        result == expected
       }
     }
   }
