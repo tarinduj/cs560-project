@@ -53,6 +53,22 @@ object UI extends App {
   bank.growTo(5) 
 
   val goodPrograms = bank.matchingPrograms(examples)
-  val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
-  println(s"Smallest program: $smallestProgram")
+
+  // the smallest program is usually pretty general
+  // val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
+  // println(s"Smallest program: $smallestProgram")
+
+  def findBestInput(programs: Set[ConcreteB], examples: Examples): Map[String, ConcreteBitVector] = ???
+  val bestInput: Map[String, ConcreteBitVector] = findBestInput(goodPrograms, examples)
+  val possibleOutputs = goodPrograms.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
+
+  println(s"Select the desired output for input $bestInput:")
+  for ((output, i) <- possibleOutputs.zipWithIndex) {
+    println(s"$i: $output")
+  }
+
+  val response = scala.io.StdIn.readLine().toInt
+  val filteredPrograms = goodPrograms.filter(ConcreteBitVectorInterpreter.eval(_, bestInput) == possibleOutputs(response))
+  val smallestFilteredProgram = filteredPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
+  println(s"${filteredPrograms.size} programs remain. Smallest: $smallestFilteredProgram")
 }
