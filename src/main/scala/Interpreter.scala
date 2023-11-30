@@ -13,6 +13,18 @@ case class ConcreteBVAnd(b1: ConcreteB, b2: ConcreteB) extends ConcreteB
 case class ConcreteBVXor(b1: ConcreteB, b2: ConcreteB) extends ConcreteB
 
 object ConcreteBitVectorInterpreter {
+  def size(expr: ConcreteB): Int = expr match {
+    case ConcreteBitVector(value) => 1
+    case ConcreteZero => 1
+    case ConcreteOne => 1
+    case ConcreteVar(name) => 1
+    case ConcreteBVAdd(b1, b2) => size(b1) + size(b2)
+    case ConcreteBVSub(b1, b2) => size(b1) + size(b2)
+    case ConcreteBVNot(b) => size(b)
+    case ConcreteBVOr(b1, b2) => size(b1) + size(b2)
+    case ConcreteBVAnd(b1, b2) => size(b1) + size(b2)
+    case ConcreteBVXor(b1, b2) => size(b1) + size(b2)
+  }
 
   def eval(expr: ConcreteB, env: Map[String, ConcreteBitVector] = Map.empty): String = expr match {
     case ConcreteBitVector(value) => value

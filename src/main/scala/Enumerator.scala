@@ -3,6 +3,7 @@ package enumerator
 import interpreter._
 
 import scala.collection.mutable.{ArrayBuffer, Set}
+import scala.collection.immutable.{Set => ImmSet}
 
 class Bank(val variables: Set[ConcreteVar] = Set(), val inputs: Option[Array[Map[String, ConcreteBitVector]]] = None) {
   val sizes = ArrayBuffer[Set[ConcreteB]](Set(ConcreteZero, ConcreteOne) ++ variables.map(_.asInstanceOf[ConcreteB]))
@@ -15,8 +16,9 @@ class Bank(val variables: Set[ConcreteVar] = Set(), val inputs: Option[Array[Map
     }
 
     for (czize <- currentSize to size) {
-      val unaryConstructors: List[ConcreteB => ConcreteB] = List(ConcreteBVNot)
-      val binaryConstructors: List[(ConcreteB, ConcreteB) => ConcreteB] = List(ConcreteBVAdd, ConcreteBVSub, ConcreteBVOr, ConcreteBVAnd, ConcreteBVXor)
+      val unaryConstructors: List[ConcreteB => ConcreteB] = List(ConcreteBVNot.apply)
+      val binaryConstructors: List[(ConcreteB, ConcreteB) => ConcreteB] = 
+        List(ConcreteBVAdd.apply, ConcreteBVSub.apply, ConcreteBVOr.apply, ConcreteBVAnd.apply, ConcreteBVXor.apply)
 
       val unaryExps: Iterable[ConcreteB] = for {
         subExp <- sizes(czize - 1)
@@ -45,6 +47,18 @@ class Bank(val variables: Set[ConcreteVar] = Set(), val inputs: Option[Array[Map
         for (exp <- unaryExps ++ binaryExps) {
           sizes(czize) += exp
         }
+      }
+    }
+  }
+
+  def programs: ImmSet[ConcreteB] = sizes.flatten.toSet
+
+  def matchingPrograms(examples: Map[Map[String, ConcreteBitVector], ConcreteBitVector]): ImmSet[ConcreteB] = {
+    val programs = this.programs
+    programs.filter { program =>
+      examples.forall { case (inputs, ConcreteBitVector(output)) =>
+        val result = ConcreteBitVectorInterpreter.eval(program, inputs)
+        result == output
       }
     }
   }
