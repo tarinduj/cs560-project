@@ -13,22 +13,22 @@ type Examples = Map[Map[String, ConcreteBitVector], ConcreteBitVector]
 
 object UI extends App {
   def getSingleExample(examples: Examples): Examples = {
-    def assignmentLoop(assigns: Map[String, ConcreteBitVector]): Map[String, ConcreteBitVector] = {
+    def assignmentLoop(assigns: Map[String, ConcreteBitVector]): (Map[String, ConcreteBitVector], ConcreteBitVector) = {
       val response = scala.io.StdIn.readLine()
       val assignRegex = raw"([a-zA-Z0-9]+)\s*=\s*([01]+)".r
+      val responseRegex = raw"([01]+)".r
       response match
-        case "n" => assigns
         case assignRegex(name, bitvector) =>
           val assignment = name -> ConcreteBitVector(bitvector)
           assignmentLoop(assigns + assignment)
+        case responseRegex(bitvector) =>
+          (assigns, ConcreteBitVector(bitvector))
         case _ =>
-          println("Invalid assignment. Try again.")
+          println("Invalid input. Try again.")
           assignmentLoop(assigns)
     }
 
-    val assigns = assignmentLoop(Map.empty)
-    println("Enter the output of the program: ")
-    val output = ConcreteBitVector(scala.io.StdIn.readLine())
+    val (assigns, output) = assignmentLoop(Map.empty)
     examples + (assigns -> output)
   }
 
@@ -37,7 +37,7 @@ object UI extends App {
     val response = scala.io.StdIn.readLine()
     response match {
       case "y" =>
-        println("Enter some assignments of the form 'name = bitvector', or 'n' to exit: ")
+        println("Enter some assignments of the form 'name = bitvector', and then the desired output by itself")
         exampleLoop(getSingleExample(examples))
       case "n" => examples
       case _ =>
@@ -52,24 +52,40 @@ object UI extends App {
 
   val variables = MutSet(examples.head._1.keySet.toSeq.map(ConcreteVar(_)): _*)
   val bank = new Bank(variables)
-  bank.growTo(5)
+  bank.growTo(7)
 
   val goodPrograms = bank.matchingPrograms(examples)
+  println(s"There are ${goodPrograms.size} good programs.")
 
   // the smallest program is usually pretty general
   // val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
   // println(s"Smallest program: $smallestProgram")
 
-  val bestInput: Map[String, ConcreteBitVector] = Constraints.findBestInput(goodPrograms, examples.head._1.keySet)
-  val possibleOutputs = goodPrograms.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
+  val progList = goodPrograms.toList
+  val smallGoodPrograms = progList.sortBy(ConcreteBitVectorInterpreter.size(_)).take(70).toSet
+  val bestInput: Map[String, ConcreteBitVector] = Constraints.findBestInput(smallGoodPrograms, examples.head._1.keySet)
+  val possibleOutputs = progList.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
 
-  println(s"Select the desired output for input $bestInput:")
-  for ((output, i) <- possibleOutputs.zipWithIndex) {
+  println(s"Select the desired output for input $bestInput with 'select n', or enter it manually:")
+  val selectRegex = raw"select\s*([0-9]+)".r
+  val inputRegex = raw"([01]+)".r
+  for ((output, i) <- possibleOutputs.take(15).zipWithIndex) {
     println(s"$i: $output")
   }
 
-  val response = scala.io.StdIn.readLine().toInt
-  val filteredPrograms = goodPrograms.filter(ConcreteBitVectorInterpreter.eval(_, bestInput) == possibleOutputs(response))
-  val smallestFilteredProgram = filteredPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
+  val chosenOutput = scala.io.StdIn.readLine().trim match {
+    case selectRegex(response) =>
+      val index = response.toInt
+      possibleOutputs(index)
+    case inputRegex(response) =>
+      response
+    case _ =>
+      println("Invalid input. Try again.")
+      ???
+  }
+
+  println(s"Selected output: $chosenOutput")
+  val filteredPrograms = goodPrograms.filter(ConcreteBitVectorInterpreter.eval(_, bestInput) == chosenOutput)
+  val smallestFilteredProgram = filteredPrograms.minByOption(ConcreteBitVectorInterpreter.size(_))
   println(s"${filteredPrograms.size} programs remain. Smallest: $smallestFilteredProgram")
 }
