@@ -75,7 +75,7 @@ object UI extends App {
       val smallestFilteredProgram = goodPrograms.minByOption(ConcreteBitVectorInterpreter.size(_))
       println(s"${goodPrograms.size} programs remain. Smallest: $smallestFilteredProgram")
 
-      val possibleOutputs = progList.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
+      val possibleOutputs = goodPrograms.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
 
       println(s"Select the desired output for input $bestInput with 'select n', or enter it manually:")
       val selectRegex = raw"select\s*([0-9]+)".r
