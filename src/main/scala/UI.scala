@@ -74,7 +74,7 @@ object UI extends App {
       val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
       println(s"All programs are equivalent. Smallest: $smallestProgram")
     } else {
-      val smallestFilteredProgram = goodPrograms.minByOption(ConcreteBitVectorInterpreter.size(_))
+      val smallestFilteredProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
       println(s"${goodPrograms.size} programs remain. Smallest: $smallestFilteredProgram")
 
       val possibleOutputs = goodPrograms.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList

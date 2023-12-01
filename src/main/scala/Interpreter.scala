@@ -1,16 +1,36 @@
 package interpreter
 
 abstract class ConcreteB
-case class ConcreteBitVector(value: String) extends ConcreteB
-case object ConcreteZero extends ConcreteB
-case object ConcreteOne extends ConcreteB
-case class ConcreteVar(name: String) extends ConcreteB
-case class ConcreteBVAdd(b1: ConcreteB, b2: ConcreteB) extends ConcreteB
-case class ConcreteBVSub(b1: ConcreteB, b2: ConcreteB) extends ConcreteB
-case class ConcreteBVNot(b: ConcreteB) extends ConcreteB
-case class ConcreteBVOr(b1: ConcreteB, b2: ConcreteB) extends ConcreteB
-case class ConcreteBVAnd(b1: ConcreteB, b2: ConcreteB) extends ConcreteB
-case class ConcreteBVXor(b1: ConcreteB, b2: ConcreteB) extends ConcreteB
+case class ConcreteBitVector(value: String) extends ConcreteB {
+  override def toString = value
+}
+case object ConcreteZero extends ConcreteB {
+  override def toString = "0"
+}
+case object ConcreteOne extends ConcreteB {
+  override def toString = "1"
+}
+case class ConcreteVar(name: String) extends ConcreteB {
+  override def toString = name
+}
+case class ConcreteBVAdd(b1: ConcreteB, b2: ConcreteB) extends ConcreteB {
+  override def toString = "bvAdd("+b1.toString+","+b2.toString+")"
+}
+case class ConcreteBVSub(b1: ConcreteB, b2: ConcreteB) extends ConcreteB {
+  override def toString = "bvSub("+b1.toString+","+b2.toString+")"
+}
+case class ConcreteBVNot(b: ConcreteB) extends ConcreteB {
+  override def toString = "bvNot("+b.toString+")"
+}
+case class ConcreteBVOr(b1: ConcreteB, b2: ConcreteB) extends ConcreteB {
+  override def toString = "bvOr("+b1.toString+","+b2.toString+")"
+}
+case class ConcreteBVAnd(b1: ConcreteB, b2: ConcreteB) extends ConcreteB {
+  override def toString = "bvAnd("+b1.toString+","+b2.toString+")"
+}
+case class ConcreteBVXor(b1: ConcreteB, b2: ConcreteB) extends ConcreteB {
+  override def toString = "bvXor("+b1.toString+","+b2.toString+")"
+}
 
 object ConcreteBitVectorInterpreter {
   def size(expr: ConcreteB): Int = expr match {

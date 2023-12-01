@@ -1,3 +1,6 @@
 /.bsp/
 target/
 /.idea/
+.metals/
+.vscode/
+unmanaged/
