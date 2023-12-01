@@ -38,7 +38,8 @@ object Constraints {
     case ConcreteBVAnd(b1, b2) => context.mkBVAnd(to_constraint(b1, variables, context), to_constraint(b2, variables, context))
     case ConcreteBVXor(b1, b2) => context.mkBVXor(to_constraint(b1, variables, context), to_constraint(b2, variables, context))
   }
-  def findBestInput(programs: Set[ConcreteB], variables: Set[String]): Map[String, ConcreteBitVector] = {
+
+  def findBestInput(programs: Set[ConcreteB], variables: Set[String]): (Map[String, ConcreteBitVector], Int) = {
     //println(programs.size)
     val ctx = new Z3Context(Map("MODEL" -> "true"))
 
@@ -73,6 +74,6 @@ object Constraints {
     //println(diff_num)
 
     ctx.delete()
-    assignments
+    (assignments, diff_num)
   }
 }

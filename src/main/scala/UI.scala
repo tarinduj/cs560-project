@@ -55,7 +55,6 @@ object UI extends App {
   bank.growTo(7)
 
   val goodPrograms = bank.matchingPrograms(examples)
-  println(s"There are ${goodPrograms.size} good programs.")
 
   // the smallest program is usually pretty general
   // val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
@@ -65,31 +64,40 @@ object UI extends App {
   def filterLoop(goodPrograms: Set[ConcreteB]): Unit = {
     val progList = goodPrograms.toList
     val smallGoodPrograms = progList.sortBy(ConcreteBitVectorInterpreter.size(_)).take(70).toSet
-    val bestInput: Map[String, ConcreteBitVector] = Constraints.findBestInput(smallGoodPrograms, examples.head._1.keySet)
-    val possibleOutputs = progList.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
 
-    println(s"Select the desired output for input $bestInput with 'select n', or enter it manually:")
-    val selectRegex = raw"select\s*([0-9]+)".r
-    val inputRegex = raw"([01]+)".r
-    for ((output, i) <- possibleOutputs.take(15).zipWithIndex) {
-      println(s"$i: $output")
+    val (bestInput, diffNum): (Map[String, ConcreteBitVector], Int) =
+      Constraints.findBestInput(smallGoodPrograms, examples.head._1.keySet)
+
+    if (diffNum == 0) {
+      val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
+      println(s"All programs are equivalent. Smallest: $smallestProgram")
+    } else {
+      val smallestFilteredProgram = goodPrograms.minByOption(ConcreteBitVectorInterpreter.size(_))
+      println(s"${goodPrograms.size} programs remain. Smallest: $smallestFilteredProgram")
+
+      val possibleOutputs = progList.map(ConcreteBitVectorInterpreter.eval(_, bestInput)).toList
+
+      println(s"Select the desired output for input $bestInput with 'select n', or enter it manually:")
+      val selectRegex = raw"select\s*([0-9]+)".r
+      val inputRegex = raw"([01]+)".r
+      for ((output, i) <- possibleOutputs.take(15).zipWithIndex) {
+        println(s"$i: $output")
+      }
+
+      val chosenOutput = scala.io.StdIn.readLine().trim match {
+        case selectRegex(response) =>
+          val index = response.toInt
+          possibleOutputs(index)
+        case inputRegex(response) =>
+          response
+        case _ =>
+          println("Invalid input. Try again.")
+          ???
+      }
+
+      println(s"Selected output: $chosenOutput")
+      val filteredPrograms = goodPrograms.filter(ConcreteBitVectorInterpreter.eval(_, bestInput) == chosenOutput)
+      filterLoop(filteredPrograms)
     }
-
-    val chosenOutput = scala.io.StdIn.readLine().trim match {
-      case selectRegex(response) =>
-        val index = response.toInt
-        possibleOutputs(index)
-      case inputRegex(response) =>
-        response
-      case _ =>
-        println("Invalid input. Try again.")
-        ???
-    }
-
-    println(s"Selected output: $chosenOutput")
-    val filteredPrograms = goodPrograms.filter(ConcreteBitVectorInterpreter.eval(_, bestInput) == chosenOutput)
-    val smallestFilteredProgram = filteredPrograms.minByOption(ConcreteBitVectorInterpreter.size(_))
-    println(s"${filteredPrograms.size} programs remain. Smallest: $smallestFilteredProgram")
-    filterLoop(filteredPrograms)
   }
 }
