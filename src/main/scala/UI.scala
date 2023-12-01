@@ -68,7 +68,9 @@ object UI extends App {
     val (bestInput, diffNum): (Map[String, ConcreteBitVector], Int) =
       Constraints.findBestInput(smallGoodPrograms, examples.head._1.keySet)
 
-    if (diffNum == 0) {
+    if (goodPrograms.size == 0) throw new RuntimeException(s"No candidate program!!")
+
+    if (diffNum == 0 || goodPrograms.size == 1) {
       val smallestProgram = goodPrograms.minBy(ConcreteBitVectorInterpreter.size(_))
       println(s"All programs are equivalent. Smallest: $smallestProgram")
     } else {
@@ -96,7 +98,7 @@ object UI extends App {
       }
 
       println(s"Selected output: $chosenOutput")
-      val filteredPrograms = goodPrograms.filter(ConcreteBitVectorInterpreter.eval(_, bestInput) == chosenOutput)
+      val filteredPrograms = goodPrograms.filter(ConcreteBitVectorInterpreter.eval(_, bestInput) == ConcreteBitVectorInterpreter.eval(ConcreteBitVector(chosenOutput), bestInput))
       filterLoop(filteredPrograms)
     }
   }

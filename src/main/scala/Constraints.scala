@@ -41,39 +41,60 @@ object Constraints {
 
   def findBestInput(programs: Set[ConcreteB], variables: Set[String]): (Map[String, ConcreteBitVector], Int) = {
     //println(programs.size)
-    val ctx = new Z3Context(Map("MODEL" -> "true"))
 
-    val env = variables.map(v => {
-        val bvSort = ctx.mkBVSort(8)
-        (v, ctx.mkConst(v, bvSort))
-      }).toMap
+    if (programs.size <= 1) {
+      (Map.empty, 0)
+    } else {
+      val ctx = new Z3Context(Map("MODEL" -> "true"))
 
-    val indexed_programs = programs.zipWithIndex;
-    val program_pairs = indexed_programs.map((p, i) => indexed_programs.filter((o, j) => j > i).map((o, _) => (p, o))).flatten
+      val env = variables.map(v => {
+          val bvSort = ctx.mkBVSort(8)
+          (v, ctx.mkConst(v, bvSort))
+        }).toMap
 
-    val soft_constraints = program_pairs.map((p1, p2) => {
-        ctx.mkNot(ctx.mkEq(to_constraint(p1, env, ctx), to_constraint(p2, env, ctx)))
+      val indexed_programs = programs.zipWithIndex;
+      val program_pairs = indexed_programs.map((p, i) => indexed_programs.filter((o, j) => j > i).map((o, _) => (p, o))).flatten
+
+      val constraints = programs.toList.sliding(2, 1).map(l => ctx.mkNot(ctx.mkEq(to_constraint(l(0), env, ctx), to_constraint(l(1), env, ctx)))).toList
+
+      val hard_constraint = constraints.tail.foldLeft(constraints.head) { (hs, curr) => { ctx.mkOr(hs, curr) }}
+
+      val soft_constraints = program_pairs.map((p1, p2) => {
+          ctx.mkNot(ctx.mkEq(to_constraint(p1, env, ctx), to_constraint(p2, env, ctx)))
+        }
+      )
+      //println(soft_constraints.size)
+      val opt_solver = ctx.mkOptimizer()
+      opt_solver.assertCnstr(hard_constraint)
+      soft_constraints.foreach(cons => opt_solver.assertCnstr(cons, 1))
+      val result = opt_solver.check()
+
+      result match {
+        case Some(false) => {
+          ctx.delete()
+          (Map.empty, 0)
+        }
+        case Some(true) => {
+          // Get the model
+          val model = opt_solver.getModel()
+          val assignments = variables.map(v => (v, ConcreteBitVector(model.evalAs[Int](env(v)).get.toBinaryString))).toMap
+          //println(assignments)
+
+          val diff_num = program_pairs.foldLeft(0) { (sum, p) => {
+            val diff = ConcreteBitVectorInterpreter.eval(p._1, assignments) != ConcreteBitVectorInterpreter.eval(p._2, assignments)
+            if (diff) sum + 1 else sum
+          }}
+
+          //println(diff_num)
+
+          ctx.delete()
+          (assignments, diff_num)
+        }
+        case None => {
+          ctx.delete()
+          throw new RuntimeException(s"Solver return unkown result.")
+        }
       }
-    )
-    //println(soft_constraints.size)
-    val opt_solver = ctx.mkOptimizer()
-    opt_solver.assertCnstr(ctx.mkTrue())
-    soft_constraints.foreach(cons => opt_solver.assertCnstr(cons, 1))
-    val result = opt_solver.check()
-
-    // Get the model
-    val model = opt_solver.getModel()
-    val assignments = variables.map(v => (v, ConcreteBitVector(model.evalAs[Int](env(v)).get.toBinaryString))).toMap
-    //println(assignments)
-
-    val diff_num = program_pairs.foldLeft(0) { (sum, p) => {
-      val diff = ConcreteBitVectorInterpreter.eval(p._1, assignments) != ConcreteBitVectorInterpreter.eval(p._2, assignments)
-      if (diff) sum + 1 else sum
-    }}
-
-    //println(diff_num)
-
-    ctx.delete()
-    (assignments, diff_num)
+    }
   }
 }
