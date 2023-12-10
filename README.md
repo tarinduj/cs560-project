@@ -35,7 +35,7 @@ Select the desired output for input Map(x -> 11111111) with 'select n', or enter
 select 0
 Selected output: 00000000
 358 programs remain. Smallest: bvAnd(bvNot(x),bvAdd(x,1))
-Select the desired output for input Map(x -> 1101111) with 'select n', or enter it manually:
+Select the desired output for input Map(x -> 01101111) with 'select n', or enter it manually:
 0: 00000000
 1: 00010000
 2: 01010000
